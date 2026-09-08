@@ -44,6 +44,12 @@ const DEFAULT_SETTINGS: EventSettings = {
 
 export default function App() {
   const deviceOrientation = useDeviceOrientation();
+  const viewportFormat: CameraFormat = deviceOrientation.isViewportLandscape ? 'horizontal' : 'vertical';
+  const mediaRotation = deviceOrientation.isUpsideDown
+    ? 180
+    : deviceOrientation.format !== viewportFormat
+      ? -deviceOrientation.angle
+      : 0;
 
   // Active frame format: 'vertical' (9:16) or 'horizontal' (16:9)
   const [format, setFormat] = useState<CameraFormat>(() => {
@@ -135,8 +141,8 @@ export default function App() {
   }, [zoom]);
 
   useEffect(() => {
-    rotationRef.current = deviceOrientation.isUpsideDown ? 180 : 0;
-  }, [deviceOrientation.isUpsideDown]);
+    rotationRef.current = mediaRotation;
+  }, [mediaRotation]);
 
   useEffect(() => {
     if (!isRecording) setFormat(deviceOrientation.format);
@@ -175,7 +181,7 @@ export default function App() {
         lens,
         format,
         zoom,
-        rotation: deviceOrientation.isUpsideDown ? 180 : 0,
+        rotation: mediaRotation,
       });
 
       // Update state & counter
@@ -355,11 +361,11 @@ export default function App() {
         format={format}
         zoom={zoom}
         onZoomChange={handleZoomChange}
-        rotation={deviceOrientation.isUpsideDown ? 180 : 0}
+        rotation={mediaRotation}
         videoRef={videoRef}
         isScreenFlashing={isScreenFlashing}
         countdown={countdown}
-        isLandscape={deviceOrientation.isLandscape}
+        isLandscape={deviceOrientation.isViewportLandscape}
         onReady={setCameraReady}
       />
 
@@ -393,7 +399,7 @@ export default function App() {
             setCurrentPhoto(lastPhotoRef.current);
           }
         }}
-        isLandscape={deviceOrientation.isLandscape}
+        isLandscape={deviceOrientation.isViewportLandscape}
       />
 
       {captureError && <div role="alert" className="absolute top-20 inset-x-4 z-50 rounded-xl bg-red-950 p-3 text-white text-center" onClick={() => setCaptureError(null)}>{captureError}</div>}

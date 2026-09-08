@@ -8,6 +8,7 @@ export interface OrientationState {
   isLandscape: boolean;
   isPortrait: boolean;
   isUpsideDown: boolean;
+  isViewportLandscape: boolean;
 }
 
 export function useDeviceOrientation() {
@@ -22,7 +23,8 @@ export function useDeviceOrientation() {
     return { orientation: landscape ? 'landscape' : 'portrait',
       format: landscape ? 'horizontal' : 'vertical',
       angle: window.screen.orientation?.angle ?? legacyAngle ?? 0,
-      isLandscape: landscape, isPortrait: !landscape, isUpsideDown: false };
+      isLandscape: landscape, isPortrait: !landscape, isUpsideDown: false,
+      isViewportLandscape: window.innerWidth > window.innerHeight };
   };
   const [state, setState] = useState(measure);
   useEffect(() => {
@@ -33,12 +35,14 @@ export function useDeviceOrientation() {
       if (absoluteGamma > 45) {
         setState({ orientation: 'landscape', format: 'horizontal',
           angle: event.gamma > 0 ? 90 : -90, isLandscape: true,
-          isPortrait: false, isUpsideDown: false });
+          isPortrait: false, isUpsideDown: false,
+          isViewportLandscape: window.innerWidth > window.innerHeight });
       } else if (absoluteGamma < 30) {
         const upsideDown = event.beta < -45 && event.beta > -135;
         setState({ orientation: 'portrait', format: 'vertical',
           angle: upsideDown ? 180 : 0, isLandscape: false,
-          isPortrait: true, isUpsideDown: upsideDown });
+          isPortrait: true, isUpsideDown: upsideDown,
+          isViewportLandscape: window.innerWidth > window.innerHeight });
       }
     };
     window.addEventListener('resize', update);

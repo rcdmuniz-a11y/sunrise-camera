@@ -74,6 +74,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, format, zoom
 
   const ratio = format === 'vertical' ? 9 / 16 : 16 / 9;
   const width = Math.min(bounds.width, bounds.height * ratio);
+  const quarterTurnScale = Math.abs(rotation) === 90 ? Math.max(ratio, 1 / ratio) : 1;
   const touchDistance = (touches: React.TouchList) => {
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
@@ -100,7 +101,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, format, zoom
       touchAction: 'none' }}>
     <div className="relative overflow-hidden" style={{ width, height: width / ratio }}>
       <video ref={videoRef} playsInline autoPlay muted className="w-full h-full object-cover"
-        style={{ transform: `rotate(${rotation}deg) scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom})` }} />
+        style={{ transform: `rotate(${rotation}deg) scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom * quarterTurnScale})` }} />
       <span className="absolute top-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-amber-300 pointer-events-none">
         {zoom.toFixed(1)}×
       </span>
@@ -108,7 +109,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, format, zoom
     {error && <div role="alert" className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center bg-slate-950 text-white">
       <p>{error}</p><button onClick={() => setRetry(n => n + 1)} className="rounded-xl bg-amber-400 px-5 py-3 text-black">Reintentar</button>
     </div>}
-    {!error && <p className="absolute bottom-1 text-white/70 text-[11px] bg-black/60 rounded px-2">El marco se añade a la captura final</p>}
     {countdown !== null && <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-8xl font-bold">{countdown}</div>}
     {isScreenFlashing && <div className="absolute inset-0 bg-white" />}
   </div>;

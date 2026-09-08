@@ -22,13 +22,16 @@ export function drawCameraSource(ctx: CanvasRenderingContext2D,
   source: CanvasImageSource, width: number, height: number,
   outputWidth: number, outputHeight: number, mirror: boolean, lens: CameraLens,
   zoom?: number, rotation = 0) {
-  const crop = sourceCrop(width, height, outputWidth, outputHeight, zoom ?? zoomForLens(lens));
+  const requestedZoom = zoom ?? zoomForLens(lens);
+  const quarterTurn = Math.abs(rotation) === 90;
+  const effectiveWidth = quarterTurn ? height : width;
+  const effectiveHeight = quarterTurn ? width : height;
+  const scale = Math.max(outputWidth / effectiveWidth, outputHeight / effectiveHeight) * requestedZoom;
   ctx.save();
   ctx.translate(outputWidth / 2, outputHeight / 2);
   if (rotation) ctx.rotate(rotation * Math.PI / 180);
-  if (mirror) ctx.scale(-1, 1);
-  ctx.drawImage(source, crop.x, crop.y, crop.width, crop.height,
-    -outputWidth / 2, -outputHeight / 2, outputWidth, outputHeight);
+  ctx.scale(mirror ? -scale : scale, scale);
+  ctx.drawImage(source, -width / 2, -height / 2, width, height);
   ctx.restore();
 }
 
