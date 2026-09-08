@@ -6,6 +6,7 @@ interface CameraViewProps {
   format: CameraFormat;
   zoom: number;
   onZoomChange: (zoom: number) => void;
+  rotation: number;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   isScreenFlashing: boolean;
   countdown: number | null;
@@ -13,7 +14,7 @@ interface CameraViewProps {
   onReady: (ready: boolean) => void;
 }
 
-export const CameraView: React.FC<CameraViewProps> = ({ facingMode, format, zoom, onZoomChange, videoRef,
+export const CameraView: React.FC<CameraViewProps> = ({ facingMode, format, zoom, onZoomChange, rotation, videoRef,
   isScreenFlashing, countdown, onReady, isLandscape }) => {
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
@@ -99,7 +100,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, format, zoom
       touchAction: 'none' }}>
     <div className="relative overflow-hidden" style={{ width, height: width / ratio }}>
       <video ref={videoRef} playsInline autoPlay muted className="w-full h-full object-cover"
-        style={{ transform: `scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom})` }} />
+        style={{ transform: `rotate(${rotation}deg) scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom})` }} />
       <span className="absolute top-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-amber-300 pointer-events-none">
         {zoom.toFixed(1)}×
       </span>

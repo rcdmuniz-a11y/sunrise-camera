@@ -77,6 +77,7 @@ export default function App() {
   const [lens, setLens] = useState<CameraLens>('1x');
   const [zoom, setZoom] = useState(1);
   const zoomRef = useRef(1);
+  const rotationRef = useRef(0);
   const [flashMode, setFlashMode] = useState<'off' | 'on'>('off');
   const [timerSeconds, setTimerSeconds] = useState<number>(0);
 
@@ -134,6 +135,10 @@ export default function App() {
   }, [zoom]);
 
   useEffect(() => {
+    rotationRef.current = deviceOrientation.isUpsideDown ? 180 : 0;
+  }, [deviceOrientation.isUpsideDown]);
+
+  useEffect(() => {
     if (!isRecording) setFormat(deviceOrientation.format);
   }, [deviceOrientation.format, isRecording]);
 
@@ -170,6 +175,7 @@ export default function App() {
         lens,
         format,
         zoom,
+        rotation: deviceOrientation.isUpsideDown ? 180 : 0,
       });
 
       // Update state & counter
@@ -219,6 +225,7 @@ export default function App() {
         counter: settings.photoCounter,
         filePrefix: settings.filePrefix,
         getZoom: () => zoomRef.current,
+        getRotation: () => rotationRef.current,
       });
 
       setIsRecording(true);
@@ -348,6 +355,7 @@ export default function App() {
         format={format}
         zoom={zoom}
         onZoomChange={handleZoomChange}
+        rotation={deviceOrientation.isUpsideDown ? 180 : 0}
         videoRef={videoRef}
         isScreenFlashing={isScreenFlashing}
         countdown={countdown}

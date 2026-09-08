@@ -11,6 +11,7 @@ export interface VideoRecordOptions {
   counter: number;
   filePrefix: string;
   getZoom?: () => number;
+  getRotation?: () => number;
 }
 
 export class VideoRecorderService {
@@ -36,8 +37,10 @@ export class VideoRecorderService {
     const isVertical = format === 'vertical';
     if (videoElement.readyState < 2 || !videoElement.videoWidth) throw new Error('La cámara todavía no está lista');
     const scale = Math.min(1, 1280 / Math.max(videoElement.videoWidth, videoElement.videoHeight));
-    const canvasWidth = Math.max(2, Math.round(videoElement.videoWidth * scale / 2) * 2);
-    const canvasHeight = Math.max(2, Math.round(videoElement.videoHeight * scale / 2) * 2);
+    const shortSide = Math.min(videoElement.videoWidth, videoElement.videoHeight);
+    const longSide = Math.max(videoElement.videoWidth, videoElement.videoHeight);
+    const canvasWidth = Math.max(2, Math.round((isVertical ? shortSide : longSide) * scale / 2) * 2);
+    const canvasHeight = Math.max(2, Math.round((isVertical ? longSide : shortSide) * scale / 2) * 2);
 
     const canvas = document.createElement('canvas');
     canvas.width = canvasWidth;
@@ -50,7 +53,8 @@ export class VideoRecorderService {
       if (!this.isRecordingActive) return;
       if (videoElement.readyState >= 2) {
         drawCameraSource(ctx, videoElement, videoElement.videoWidth, videoElement.videoHeight,
-          canvasWidth, canvasHeight, facingMode === 'user', lens, options.getZoom?.());
+          canvasWidth, canvasHeight, facingMode === 'user', lens,
+          options.getZoom?.(), options.getRotation?.());
         if (frameImage?.naturalWidth) drawEventFrame(ctx, frameImage, canvasWidth, canvasHeight);
       }
       this.animFrameId = requestAnimationFrame(renderLoop);

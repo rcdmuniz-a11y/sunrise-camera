@@ -3,7 +3,6 @@ import { CapturedPhoto } from '../types/camera';
 import { saveOrSharePhoto } from '../utils/photoComposer';
 import {
   Download,
-  Share2,
   RotateCcw,
   CheckCircle2,
   Sparkles,
@@ -97,8 +96,7 @@ export const PhotoPreviewModal: React.FC<PhotoPreviewProps> = ({
             ) : (
               <>
                 <Download size={20} className="stroke-[2.5]" />
-                <span>Guardar en Fotos / Compartir</span>
-                <Share2 size={16} className="text-black/70" />
+                <span>Guardar foto</span>
               </>
             )}
           </button>

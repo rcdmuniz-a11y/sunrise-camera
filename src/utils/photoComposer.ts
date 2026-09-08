@@ -12,11 +12,12 @@ interface ComposeOptions {
   lens?: CameraLens;
   format: CameraFormat;
   zoom?: number;
+  rotation?: number;
 }
 
 export async function composeHighResPhoto(options: ComposeOptions): Promise<CapturedPhoto> {
   const { videoElement, imageElement, frames, counter, filePrefix, format,
-    facingMode = 'environment', lens = '1x', zoom = 1 } = options;
+    facingMode = 'environment', lens = '1x', zoom = 1, rotation = 0 } = options;
   const source = videoElement && videoElement.readyState >= 2 ? videoElement : imageElement;
   const width = source instanceof HTMLVideoElement ? source.videoWidth : source?.naturalWidth || 0;
   const height = source instanceof HTMLVideoElement ? source.videoHeight : source?.naturalHeight || 0;
@@ -31,7 +32,7 @@ export async function composeHighResPhoto(options: ComposeOptions): Promise<Capt
   if (!ctx) throw new Error('No se pudo preparar la foto');
   // Freeze the photograph before loading branding, so movement cannot change it.
   drawCameraSource(ctx, source, width, height, outputWidth, outputHeight,
-    facingMode === 'user', lens, zoom);
+    facingMode === 'user', lens, zoom, rotation);
   const frame = new Image();
   await new Promise<void>((resolve, reject) => {
     frame.onload = () => resolve();
@@ -49,10 +50,12 @@ export async function composeHighResPhoto(options: ComposeOptions): Promise<Capt
 
 export async function saveOrSharePhoto(photo: CapturedPhoto): Promise<{ savedDirectly: boolean; message: string }> {
   const file = new File([photo.blob], photo.filename, { type: 'image/jpeg' });
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  // On iOS Safari / iPhone Web, navigator.canShare with files triggers the native Share Sheet,
-  // allowing the user to tap "Guardar imagen" to put it straight into Apple Photos!
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+  // iOS does not expose direct Photos-library writes to web apps. Its share sheet
+  // is the only browser-supported route to "Guardar imagen".
+  if (isIOS && navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({
         files: [file],
@@ -68,13 +71,15 @@ export async function saveOrSharePhoto(photo: CapturedPhoto): Promise<{ savedDir
     }
   }
 
-  // Standard web download fallback
+  // Android and desktop: download the JPEG directly from the generated blob.
   const a = document.createElement('a');
-  a.href = photo.dataUrl;
+  const objectUrl = URL.createObjectURL(photo.blob);
+  a.href = objectUrl;
   a.download = photo.filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 
-  return { savedDirectly: true, message: `Descargado como ${photo.filename}` };
+  return { savedDirectly: true, message: `Foto guardada: ${photo.filename}` };
 }
