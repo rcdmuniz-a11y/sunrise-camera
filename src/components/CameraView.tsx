@@ -18,18 +18,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, format, zoom
   isScreenFlashing, countdown, onReady, isLandscape }) => {
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [bounds, setBounds] = useState({ width: 1, height: 1 });
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const observer = new ResizeObserver(([entry]) => setBounds({
-      width: entry.contentRect.width, height: entry.contentRect.height }));
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -72,9 +61,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, format, zoom
     };
   }, [facingMode, retry, videoRef, onReady]);
 
-  const ratio = format === 'vertical' ? 9 / 16 : 16 / 9;
-  const width = Math.min(bounds.width, bounds.height * ratio);
-  const quarterTurnScale = Math.abs(rotation) === 90 ? Math.max(ratio, 1 / ratio) : 1;
   const touchDistance = (touches: React.TouchList) => {
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
@@ -94,15 +80,14 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, format, zoom
   };
   const handleTouchEnd = () => { pinchRef.current = null; };
 
-  return <div ref={containerRef} id="camera_viewport_container"
+  return <div id="camera_viewport_container"
     className="absolute flex items-center justify-center bg-black overflow-hidden"
     onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
-    style={{ left: 0, right: isLandscape ? 208 : 0, top: 64, bottom: isLandscape ? 0 : 224,
-      touchAction: 'none' }}>
-    <div className="relative overflow-hidden" style={{ width, height: width / ratio }}>
+    style={{ inset: 0, touchAction: 'none' }}>
+    <div className="relative overflow-hidden w-full h-full">
       <video ref={videoRef} playsInline autoPlay muted className="w-full h-full object-cover"
-        style={{ transform: `rotate(${rotation}deg) scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom * quarterTurnScale})` }} />
-      <span className="absolute top-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-amber-300 pointer-events-none">
+        style={{ transform: `rotate(${rotation}deg) scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom})` }} />
+      <span className="absolute top-20 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-amber-300 pointer-events-none">
         {zoom.toFixed(1)}×
       </span>
     </div>

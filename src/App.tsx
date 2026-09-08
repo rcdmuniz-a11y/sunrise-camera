@@ -44,12 +44,7 @@ const DEFAULT_SETTINGS: EventSettings = {
 
 export default function App() {
   const deviceOrientation = useDeviceOrientation();
-  const viewportFormat: CameraFormat = deviceOrientation.isViewportLandscape ? 'horizontal' : 'vertical';
-  const mediaRotation = deviceOrientation.isUpsideDown
-    ? 180
-    : deviceOrientation.format !== viewportFormat
-      ? -deviceOrientation.angle
-      : 0;
+  const mediaRotation = 0;
 
   // Active frame format: 'vertical' (9:16) or 'horizontal' (16:9)
   const [format, setFormat] = useState<CameraFormat>(() => {

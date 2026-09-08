@@ -22,10 +22,8 @@ export async function composeHighResPhoto(options: ComposeOptions): Promise<Capt
   const width = source instanceof HTMLVideoElement ? source.videoWidth : source?.naturalWidth || 0;
   const height = source instanceof HTMLVideoElement ? source.videoHeight : source?.naturalHeight || 0;
   if (!source || !width || !height) throw new Error('La cámara todavía no está lista. Vuelve a intentar.');
-  const shortSide = Math.min(width, height);
-  const longSide = Math.max(width, height);
-  const outputWidth = format === 'vertical' ? shortSide : longSide;
-  const outputHeight = format === 'vertical' ? longSide : shortSide;
+  const outputWidth = format === 'vertical' ? 1080 : 1920;
+  const outputHeight = format === 'vertical' ? 1920 : 1080;
   const canvas = document.createElement('canvas');
   canvas.width = outputWidth; canvas.height = outputHeight;
   const ctx = canvas.getContext('2d', { alpha: false });
