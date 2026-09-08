@@ -1,4 +1,4 @@
-import { CapturedPhoto, CameraLens } from '../types/camera';
+import { CapturedPhoto, CameraLens, CaptureSize } from '../types/camera';
 import { CameraFormat } from '../types/camera';
 import { drawCameraSource, drawEventFrame } from './cameraGeometry';
 
@@ -13,17 +13,20 @@ interface ComposeOptions {
   format: CameraFormat;
   zoom?: number;
   rotation?: number;
+  captureSize: CaptureSize;
 }
 
 export async function composeHighResPhoto(options: ComposeOptions): Promise<CapturedPhoto> {
-  const { videoElement, imageElement, frames, counter, filePrefix, format,
+  const { videoElement, imageElement, frames, counter, filePrefix, format, captureSize,
     facingMode = 'environment', lens = '1x', zoom = 1, rotation = 0 } = options;
   const source = videoElement && videoElement.readyState >= 2 ? videoElement : imageElement;
   const width = source instanceof HTMLVideoElement ? source.videoWidth : source?.naturalWidth || 0;
   const height = source instanceof HTMLVideoElement ? source.videoHeight : source?.naturalHeight || 0;
   if (!source || !width || !height) throw new Error('La cámara todavía no está lista. Vuelve a intentar.');
-  const outputWidth = format === 'vertical' ? 1080 : 1920;
-  const outputHeight = format === 'vertical' ? 1920 : 1080;
+  const square = captureSize === 'square';
+  const classic = captureSize === 'classic';
+  const outputWidth = square ? 1080 : format === 'vertical' ? 1080 : classic ? 1440 : 1920;
+  const outputHeight = square ? 1080 : format === 'vertical' ? classic ? 1440 : 1920 : 1080;
   const canvas = document.createElement('canvas');
   canvas.width = outputWidth; canvas.height = outputHeight;
   const ctx = canvas.getContext('2d', { alpha: false });

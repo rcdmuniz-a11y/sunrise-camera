@@ -1,4 +1,4 @@
-import { CameraFormat, CameraLens, FilterId, CapturedVideo } from '../types/camera';
+import { CameraFormat, CameraLens, CaptureSize, FilterId, CapturedVideo } from '../types/camera';
 import { drawCameraSource, drawEventFrame } from './cameraGeometry';
 
 export interface VideoRecordOptions {
@@ -12,6 +12,7 @@ export interface VideoRecordOptions {
   filePrefix: string;
   getZoom?: () => number;
   getRotation?: () => number;
+  captureSize: CaptureSize;
 }
 
 export class VideoRecorderService {
@@ -36,8 +37,10 @@ export class VideoRecorderService {
     // Target dimensions for smooth high-quality recording
     const isVertical = format === 'vertical';
     if (videoElement.readyState < 2 || !videoElement.videoWidth) throw new Error('La cámara todavía no está lista');
-    const canvasWidth = isVertical ? 720 : 1280;
-    const canvasHeight = isVertical ? 1280 : 720;
+    const square = options.captureSize === 'square';
+    const classic = options.captureSize === 'classic';
+    const canvasWidth = square ? 720 : isVertical ? 720 : classic ? 960 : 1280;
+    const canvasHeight = square ? 720 : isVertical ? classic ? 960 : 1280 : 720;
 
     const canvas = document.createElement('canvas');
     canvas.width = canvasWidth;

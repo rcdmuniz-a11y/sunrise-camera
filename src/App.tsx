@@ -6,12 +6,12 @@ import {
   CameraLens,
   CameraMode,
   CapturedVideo,
+  CaptureSize,
 } from './types/camera';
 import marcoVerticalPng from './Marco Vertical.png';
 import marcoHorizontalPng from './Marco Horizontal.png';
 import {
   playShutterSound,
-  playTimerBeep,
   playRecordStartSound,
   playRecordStopSound,
 } from './utils/audioEffects';
@@ -22,7 +22,6 @@ import { CameraView } from './components/CameraView';
 import { BottomControls } from './components/BottomControls';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { VideoPreviewModal } from './components/VideoPreviewModal';
-import { EventSettingsModal } from './components/EventSettingsModal';
 import { useDeviceOrientation } from './hooks/useDeviceOrientation';
 import confetti from 'canvas-confetti';
 
@@ -44,16 +43,11 @@ const DEFAULT_SETTINGS: EventSettings = {
 
 export default function App() {
   const deviceOrientation = useDeviceOrientation();
-  const mediaRotation = 0;
+  const viewportFormat: CameraFormat = deviceOrientation.isViewportLandscape ? 'horizontal' : 'vertical';
+  const format = deviceOrientation.physicalFormat;
+  const mediaRotation = format !== viewportFormat ? -deviceOrientation.angle : 0;
 
   // Active frame format: 'vertical' (9:16) or 'horizontal' (16:9)
-  const [format, setFormat] = useState<CameraFormat>(() => {
-    if (typeof window !== 'undefined' && window.innerWidth > window.innerHeight) {
-      return 'horizontal';
-    }
-    return 'vertical';
-  });
-
   // Event settings & photo counter
   const [settings, setSettings] = useState<EventSettings>(() => {
     try {
@@ -79,19 +73,14 @@ export default function App() {
   const [zoom, setZoom] = useState(1);
   const zoomRef = useRef(1);
   const rotationRef = useRef(0);
-  const [flashMode, setFlashMode] = useState<'off' | 'on'>('off');
-  const [timerSeconds, setTimerSeconds] = useState<number>(0);
-
+  const [captureSize, setCaptureSize] = useState<CaptureSize>('full');
   // Capture execution & feedback
   const [isCapturing, setIsCapturing] = useState(false);
-  const [isScreenFlashing, setIsScreenFlashing] = useState(false);
-  const [countdown, setCountdown] = useState<number | null>(null);
 
   // Media & Modals
   const [currentPhoto, setCurrentPhoto] = useState<CapturedPhoto | null>(null);
   const [currentVideo, setCurrentVideo] = useState<CapturedVideo | null>(null);
   const [lastMediaThumb, setLastMediaThumb] = useState<string | undefined>(undefined);
-  const [showEventSettings, setShowEventSettings] = useState(false);
 
   const lastPhotoRef = useRef<CapturedPhoto | null>(null);
   const lastVideoRef = useRef<CapturedVideo | null>(null);
@@ -113,18 +102,8 @@ export default function App() {
     }
   }, [settings]);
 
-  // Flash toggle: off <-> on
-  const handleCycleFlash = () => {
-    setFlashMode((prev) => (prev === 'off' ? 'on' : 'off'));
-  };
-
-  // Timer toggle: 0s <-> 3s
-  const handleToggleTimer = () => {
-    setTimerSeconds((prev) => (prev === 0 ? 3 : 0));
-  };
-
   const handleSwitchCamera = () => {
-    if (isRecording || isCapturing || countdown !== null) return;
+    if (isRecording || isCapturing) return;
     setCameraReady(false);
     setLens('1x');
     setZoom(1);
@@ -138,10 +117,6 @@ export default function App() {
   useEffect(() => {
     rotationRef.current = mediaRotation;
   }, [mediaRotation]);
-
-  useEffect(() => {
-    if (!isRecording) setFormat(deviceOrientation.format);
-  }, [deviceOrientation.format, isRecording]);
 
   const handleZoomChange = (nextZoom: number) => {
     setZoom(nextZoom);
@@ -160,11 +135,6 @@ export default function App() {
     setIsCapturing(true);
 
     try {
-      if (flashMode === 'on') {
-        setIsScreenFlashing(true);
-        setTimeout(() => setIsScreenFlashing(false), 220);
-      }
-
       playShutterSound();
 
       const photo = await composeHighResPhoto({
@@ -177,6 +147,7 @@ export default function App() {
         format,
         zoom,
         rotation: mediaRotation,
+        captureSize,
       });
 
       // Update state & counter
@@ -227,6 +198,7 @@ export default function App() {
         filePrefix: settings.filePrefix,
         getZoom: () => zoomRef.current,
         getRotation: () => rotationRef.current,
+        captureSize,
       });
 
       setIsRecording(true);
@@ -269,6 +241,7 @@ export default function App() {
         facingMode,
         counter: settings.photoCounter,
         filePrefix: settings.filePrefix,
+        captureSize,
       });
 
       setIsRecording(false);
@@ -289,56 +262,13 @@ export default function App() {
 
   // Shutter trigger (handles photo capture or video start/stop)
   const handleShutterTrigger = () => {
-    if (countdown !== null || isCapturing || (!cameraReady && !isRecording)) return;
+    if (isCapturing || (!cameraReady && !isRecording)) return;
     if (cameraMode === 'video') {
-      if (isRecording) {
-        executeStopRecording();
-      } else {
-        if (timerSeconds > 0) {
-          let remaining = timerSeconds;
-          setCountdown(remaining);
-          playTimerBeep();
-
-          const interval = setInterval(() => {
-            remaining -= 1;
-            if (remaining > 0) {
-              setCountdown(remaining);
-              playTimerBeep();
-            } else {
-              clearInterval(interval);
-              setCountdown(null);
-              executeStartRecording();
-            }
-          }, 1000);
-        } else {
-          executeStartRecording();
-        }
-      }
+      if (isRecording) executeStopRecording();
+      else executeStartRecording();
       return;
     }
-
-    // Photo mode
-    if (isCapturing) return;
-
-    if (timerSeconds > 0) {
-      let remaining = timerSeconds;
-      setCountdown(remaining);
-      playTimerBeep();
-
-      const interval = setInterval(() => {
-        remaining -= 1;
-        if (remaining > 0) {
-          setCountdown(remaining);
-          playTimerBeep();
-        } else {
-          clearInterval(interval);
-          setCountdown(null);
-          executeCaptureNow();
-        }
-      }, 1000);
-    } else {
-      executeCaptureNow();
-    }
+    executeCaptureNow();
   };
 
   return (
@@ -353,24 +283,19 @@ export default function App() {
       {/* 100% Fullscreen Camera Viewfinder */}
       <CameraView
         facingMode={facingMode}
-        format={format}
         zoom={zoom}
         onZoomChange={handleZoomChange}
         rotation={mediaRotation}
+        captureSize={captureSize}
+        physicalFormat={format}
         videoRef={videoRef}
-        isScreenFlashing={isScreenFlashing}
-        countdown={countdown}
-        isLandscape={deviceOrientation.isViewportLandscape}
         onReady={setCameraReady}
       />
 
       {/* Floating Top Header Controls */}
       <TopBar
         onSwitchCamera={handleSwitchCamera}
-        flashMode={flashMode}
-        onCycleFlash={handleCycleFlash}
         photoCount={settings.photoCounter}
-        onOpenSettings={() => setShowEventSettings(true)}
       />
 
       {/* Floating Bottom Controls: Lens, Filters, Mode (Foto/Video), Shutter Button, Timer, Gallery */}
@@ -383,9 +308,10 @@ export default function App() {
         onSelectLens={handleSelectLens}
         facingMode={facingMode}
         onCapture={handleShutterTrigger}
-        isCapturing={isCapturing || !cameraReady || countdown !== null}
-        timerSeconds={timerSeconds}
-        onToggleTimer={handleToggleTimer}
+        isCapturing={isCapturing || !cameraReady}
+        captureSize={captureSize}
+        physicalFormat={format}
+        onSelectCaptureSize={setCaptureSize}
         lastPhotoThumb={lastMediaThumb}
         onOpenLastPhoto={() => {
           if (cameraMode === 'video' && lastVideoRef.current) {
@@ -417,15 +343,6 @@ export default function App() {
         />
       )}
 
-      {/* Event Settings Modal */}
-      {showEventSettings && (
-        <EventSettingsModal
-          settings={settings}
-          onUpdateSettings={(upd) => setSettings((prev) => ({ ...prev, ...upd }))}
-          onResetCounter={() => setSettings((prev) => ({ ...prev, photoCounter: 1 }))}
-          onClose={() => setShowEventSettings(false)}
-        />
-      )}
     </main>
   );
 }

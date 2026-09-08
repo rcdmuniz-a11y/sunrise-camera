@@ -1,25 +1,16 @@
 import React from 'react';
 import {
   SwitchCamera,
-  Zap,
-  ZapOff,
-  Settings,
 } from 'lucide-react';
 
 interface TopBarProps {
   onSwitchCamera: () => void;
-  flashMode: 'off' | 'on' | 'auto';
-  onCycleFlash: () => void;
   photoCount: number;
-  onOpenSettings: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
   onSwitchCamera,
-  flashMode,
-  onCycleFlash,
   photoCount,
-  onOpenSettings,
 }) => {
   return (
     <header
@@ -37,22 +28,8 @@ export const TopBar: React.FC<TopBarProps> = ({
         <span className="text-slate-400">#{photoCount}</span>
       </div>
 
-      {/* Right: Camera Flip, Flash, Settings */}
+      {/* Right: Camera Flip */}
       <div className="flex items-center gap-2">
-        {/* Flash */}
-        <button
-          id="btn_flash_toggle"
-          onClick={onCycleFlash}
-          title={`Flash: ${flashMode.toUpperCase()}`}
-          className={`p-2 rounded-full border transition-all active:scale-95 ${
-            flashMode === 'on'
-              ? 'bg-amber-500 text-black border-amber-300 shadow-md shadow-amber-500/30'
-              : 'bg-black/60 text-white/80 border-white/20 hover:bg-black/80'
-          }`}
-        >
-          {flashMode === 'off' ? <ZapOff size={16} /> : <Zap size={16} />}
-        </button>
-
         {/* Flip camera */}
         <button
           id="btn_flip_camera"
@@ -63,15 +40,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           <SwitchCamera size={16} />
         </button>
 
-        {/* Settings */}
-        <button
-          id="btn_open_settings"
-          onClick={onOpenSettings}
-          title="Configuración"
-          className="p-2 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-slate-300 hover:text-white active:scale-95 transition-all"
-        >
-          <Settings size={16} />
-        </button>
       </div>
     </header>
   );

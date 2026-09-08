@@ -1,6 +1,6 @@
 import React from 'react';
-import { CameraLens, CameraMode } from '../types/camera';
-import { Timer, Sparkles, Video as VideoIcon, Camera as CameraIcon } from 'lucide-react';
+import { CameraFormat, CameraLens, CameraMode, CaptureSize } from '../types/camera';
+import { Sparkles, Video as VideoIcon, Camera as CameraIcon } from 'lucide-react';
 
 interface BottomControlsProps {
   cameraMode: CameraMode;
@@ -12,8 +12,9 @@ interface BottomControlsProps {
   facingMode: 'user' | 'environment';
   onCapture: () => void;
   isCapturing: boolean;
-  timerSeconds: number;
-  onToggleTimer: () => void;
+  captureSize: CaptureSize;
+  physicalFormat: CameraFormat;
+  onSelectCaptureSize: (size: CaptureSize) => void;
   lastPhotoThumb?: string;
   onOpenLastPhoto?: () => void;
   isLandscape?: boolean;
@@ -29,8 +30,9 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
   facingMode,
   onCapture,
   isCapturing,
-  timerSeconds,
-  onToggleTimer,
+  captureSize,
+  physicalFormat,
+  onSelectCaptureSize,
   lastPhotoThumb,
   onOpenLastPhoto,
   isLandscape = false,
@@ -38,6 +40,11 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
   // Digital zoom crops the native camera feed consistently in every output.
   const availableLenses: CameraLens[] =
     facingMode === 'user' ? ['1x', '2x'] : ['1x', '2x', '3x'];
+  const sizes: Array<{ id: CaptureSize; label: string }> = [
+    { id: 'full', label: physicalFormat === 'horizontal' ? '16:9' : '9:16' },
+    { id: 'classic', label: physicalFormat === 'horizontal' ? '4:3' : '3:4' },
+    { id: 'square', label: '1:1' },
+  ];
 
   const formatTime = (totalSec: number) => {
     const mins = Math.floor(totalSec / 60);
@@ -58,6 +65,14 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
         paddingRight: 'max(12px, env(safe-area-inset-right, 12px))',
       }}
     >
+      <div className="flex items-center gap-1 rounded-full bg-black/65 p-1 mb-2 border border-white/15 backdrop-blur-md">
+        {sizes.map(size => <button key={size.id} onClick={() => onSelectCaptureSize(size.id)}
+          disabled={isRecording || isCapturing}
+          className={`min-w-[48px] rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${captureSize === size.id
+            ? 'bg-white text-black' : 'text-white/70 hover:text-white'}`}>
+          {size.label}
+        </button>)}
+      </div>
       {/* 1. iPhone Zoom Lens Selector with 0.5x Plano Angular */}
       <div className="flex flex-col items-center mb-1.5">
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 shadow-xl">
@@ -188,27 +203,10 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
           )}
         </div>
 
-        {/* Right: Timer Toggle */}
+        {/* Right spacer keeps the shutter centered */}
         <div className="w-14 flex items-center justify-end">
-          <button
-            id="btn_timer_toggle"
-            onClick={onToggleTimer}
-            disabled={isRecording}
-            title="Temporizador 3 segundos"
-            className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl border transition-all active:scale-95 disabled:opacity-40 ${
-              timerSeconds > 0
-                ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold'
-                : 'bg-black/60 border-white/20 text-slate-300 hover:text-white'
-            }`}
-          >
-            <Timer size={16} />
-            <span className="text-[9px] font-mono mt-0.5">
-              {timerSeconds > 0 ? `${timerSeconds}s` : 'Off'}
-            </span>
-          </button>
         </div>
       </div>
     </footer>
   );
 };
-
