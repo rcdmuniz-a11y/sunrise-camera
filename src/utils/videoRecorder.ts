@@ -10,6 +10,7 @@ export interface VideoRecordOptions {
   facingMode: 'user' | 'environment';
   counter: number;
   filePrefix: string;
+  getZoom?: () => number;
 }
 
 export class VideoRecorderService {
@@ -49,7 +50,7 @@ export class VideoRecorderService {
       if (!this.isRecordingActive) return;
       if (videoElement.readyState >= 2) {
         drawCameraSource(ctx, videoElement, videoElement.videoWidth, videoElement.videoHeight,
-          canvasWidth, canvasHeight, facingMode === 'user', lens);
+          canvasWidth, canvasHeight, facingMode === 'user', lens, options.getZoom?.());
         if (frameImage?.naturalWidth) drawEventFrame(ctx, frameImage, canvasWidth, canvasHeight);
       }
       this.animFrameId = requestAnimationFrame(renderLoop);

@@ -4,16 +4,24 @@ export const zoomForLens = (lens: CameraLens): number => lens === '2x' ? 2 : len
 
 // Preserve the camera's own pixel orientation and aspect ratio. A viewport
 // mismatch is not evidence that the browser supplied rotated pixels.
-export function sourceCrop(width: number, height: number, lens: CameraLens) {
-  const zoom = zoomForLens(lens);
-  return { x: (width - width / zoom) / 2, y: (height - height / zoom) / 2,
-    width: width / zoom, height: height / zoom };
+export function sourceCrop(width: number, height: number, outputWidth: number,
+  outputHeight: number, zoom: number) {
+  const sourceRatio = width / height;
+  const outputRatio = outputWidth / outputHeight;
+  let cropWidth = width;
+  let cropHeight = height;
+  if (sourceRatio > outputRatio) cropWidth = height * outputRatio;
+  else cropHeight = width / outputRatio;
+  cropWidth /= zoom;
+  cropHeight /= zoom;
+  return { x: (width - cropWidth) / 2, y: (height - cropHeight) / 2,
+    width: cropWidth, height: cropHeight };
 }
 
 export function drawCameraSource(ctx: CanvasRenderingContext2D,
   source: CanvasImageSource, width: number, height: number,
-  outputWidth: number, outputHeight: number, mirror: boolean, lens: CameraLens) {
-  const crop = sourceCrop(width, height, lens);
+  outputWidth: number, outputHeight: number, mirror: boolean, lens: CameraLens, zoom?: number) {
+  const crop = sourceCrop(width, height, outputWidth, outputHeight, zoom ?? zoomForLens(lens));
   ctx.save();
   if (mirror) { ctx.translate(outputWidth, 0); ctx.scale(-1, 1); }
   ctx.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, outputWidth, outputHeight);

@@ -1,4 +1,5 @@
 import { CapturedPhoto, CameraLens } from '../types/camera';
+import { CameraFormat } from '../types/camera';
 import { drawCameraSource, drawEventFrame } from './cameraGeometry';
 
 interface ComposeOptions {
@@ -9,35 +10,41 @@ interface ComposeOptions {
   filePrefix: string;
   facingMode?: 'user' | 'environment';
   lens?: CameraLens;
+  format: CameraFormat;
+  zoom?: number;
 }
 
 export async function composeHighResPhoto(options: ComposeOptions): Promise<CapturedPhoto> {
-  const { videoElement, imageElement, frames, counter, filePrefix,
-    facingMode = 'environment', lens = '1x' } = options;
+  const { videoElement, imageElement, frames, counter, filePrefix, format,
+    facingMode = 'environment', lens = '1x', zoom = 1 } = options;
   const source = videoElement && videoElement.readyState >= 2 ? videoElement : imageElement;
   const width = source instanceof HTMLVideoElement ? source.videoWidth : source?.naturalWidth || 0;
   const height = source instanceof HTMLVideoElement ? source.videoHeight : source?.naturalHeight || 0;
   if (!source || !width || !height) throw new Error('La cámara todavía no está lista. Vuelve a intentar.');
-  const format = width > height ? 'horizontal' : 'vertical';
+  const shortSide = Math.min(width, height);
+  const longSide = Math.max(width, height);
+  const outputWidth = format === 'vertical' ? shortSide : longSide;
+  const outputHeight = format === 'vertical' ? longSide : shortSide;
   const canvas = document.createElement('canvas');
-  canvas.width = width; canvas.height = height;
+  canvas.width = outputWidth; canvas.height = outputHeight;
   const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('No se pudo preparar la foto');
   // Freeze the photograph before loading branding, so movement cannot change it.
-  drawCameraSource(ctx, source, width, height, width, height, facingMode === 'user', lens);
+  drawCameraSource(ctx, source, width, height, outputWidth, outputHeight,
+    facingMode === 'user', lens, zoom);
   const frame = new Image();
   await new Promise<void>((resolve, reject) => {
     frame.onload = () => resolve();
     frame.onerror = () => reject(new Error('No se pudo cargar el marco de la foto'));
     frame.src = frames[format];
   });
-  drawEventFrame(ctx, frame, width, height);
+  drawEventFrame(ctx, frame, outputWidth, outputHeight);
   const index = String(counter).padStart(3, '0');
   const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(
     value => value ? resolve(value) : reject(new Error('No se pudo exportar la foto')), 'image/jpeg', 0.95));
   return { id: `photo_${Date.now()}_${index}`, filename: `${filePrefix}${index}.jpg`,
     dataUrl: canvas.toDataURL('image/jpeg', 0.95), blob, format, filterId: 'original',
-    filterName: 'Original', timestamp: new Date(), lens, width, height };
+    filterName: 'Original', timestamp: new Date(), lens, width: outputWidth, height: outputHeight };
 }
 
 export async function saveOrSharePhoto(photo: CapturedPhoto): Promise<{ savedDirectly: boolean; message: string }> {

@@ -1,8 +1,5 @@
 import React from 'react';
-import { CameraFormat } from '../types/camera';
 import {
-  Smartphone,
-  Monitor,
   SwitchCamera,
   Zap,
   ZapOff,
@@ -10,7 +7,6 @@ import {
 } from 'lucide-react';
 
 interface TopBarProps {
-  format: CameraFormat;
   onSwitchCamera: () => void;
   flashMode: 'off' | 'on' | 'auto';
   onCycleFlash: () => void;
@@ -19,7 +15,6 @@ interface TopBarProps {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
-  format,
   onSwitchCamera,
   flashMode,
   onCycleFlash,
@@ -36,25 +31,6 @@ export const TopBar: React.FC<TopBarProps> = ({
         paddingRight: 'max(12px, env(safe-area-inset-right, 12px))',
       }}
     >
-      {/* Left: Simple, clear format switcher (Vertical 9:16 / Horizontal 16:9) */}
-      <div
-        id="camera_detected_format"
-        title="Orientación detectada automáticamente desde la cámara"
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 border border-white/20 hover:border-amber-400 active:scale-95 transition-all text-xs font-semibold shadow-lg backdrop-blur-md"
-      >
-        {format === 'vertical' ? (
-          <>
-            <Smartphone size={15} className="text-amber-400" />
-            <span>Vertical · Auto</span>
-          </>
-        ) : (
-          <>
-            <Monitor size={15} className="text-amber-400" />
-            <span>Horizontal · Auto</span>
-          </>
-        )}
-      </div>
-
       {/* Center: Event Branding */}
       <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 border border-white/10 text-xs font-mono backdrop-blur-md">
         <span className="text-amber-400 font-bold">SUNRISE</span>

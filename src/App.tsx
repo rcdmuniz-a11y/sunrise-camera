@@ -75,6 +75,8 @@ export default function App() {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   // iPhone zoom lenses: '0.5x' (Plano angular), '1x', '2x', '3x'
   const [lens, setLens] = useState<CameraLens>('1x');
+  const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(1);
   const [flashMode, setFlashMode] = useState<'off' | 'on'>('off');
   const [timerSeconds, setTimerSeconds] = useState<number>(0);
 
@@ -123,7 +125,26 @@ export default function App() {
     if (isRecording || isCapturing || countdown !== null) return;
     setCameraReady(false);
     setLens('1x');
+    setZoom(1);
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+  };
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    if (!isRecording) setFormat(deviceOrientation.format);
+  }, [deviceOrientation.format, isRecording]);
+
+  const handleZoomChange = (nextZoom: number) => {
+    setZoom(nextZoom);
+    setLens(nextZoom >= 2.5 ? '3x' : nextZoom >= 1.5 ? '2x' : '1x');
+  };
+
+  const handleSelectLens = (nextLens: CameraLens) => {
+    setLens(nextLens);
+    setZoom(Number.parseFloat(nextLens));
   };
 
   // Capture Photo Execution
@@ -147,6 +168,8 @@ export default function App() {
         filePrefix: settings.filePrefix,
         facingMode,
         lens,
+        format,
+        zoom,
       });
 
       // Update state & counter
@@ -195,6 +218,7 @@ export default function App() {
         facingMode,
         counter: settings.photoCounter,
         filePrefix: settings.filePrefix,
+        getZoom: () => zoomRef.current,
       });
 
       setIsRecording(true);
@@ -321,18 +345,18 @@ export default function App() {
       {/* 100% Fullscreen Camera Viewfinder */}
       <CameraView
         facingMode={facingMode}
-        lens={lens}
+        format={format}
+        zoom={zoom}
+        onZoomChange={handleZoomChange}
         videoRef={videoRef}
         isScreenFlashing={isScreenFlashing}
         countdown={countdown}
         isLandscape={deviceOrientation.isLandscape}
         onReady={setCameraReady}
-        onFormat={setFormat}
       />
 
       {/* Floating Top Header Controls */}
       <TopBar
-        format={format}
         onSwitchCamera={handleSwitchCamera}
         flashMode={flashMode}
         onCycleFlash={handleCycleFlash}
@@ -347,7 +371,7 @@ export default function App() {
         isRecording={isRecording}
         recordingDuration={recordingDuration}
         lens={lens}
-        onSelectLens={setLens}
+        onSelectLens={handleSelectLens}
         facingMode={facingMode}
         onCapture={handleShutterTrigger}
         isCapturing={isCapturing || !cameraReady || countdown !== null}
@@ -396,3 +420,4 @@ export default function App() {
     </main>
   );
 }
+
