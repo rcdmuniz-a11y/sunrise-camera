@@ -51,7 +51,7 @@ export const PhotoPreviewModal: React.FC<PhotoPreviewProps> = ({
                 {photo.filename}
               </h2>
               <p className="text-[11px] text-slate-400">
-                {photo.width} × {photo.height} px • {photo.format === 'vertical' ? 'Vertical' : 'Horizontal'}
+                Foto {photo.format === 'vertical' ? 'vertical' : 'horizontal'}
               </p>
             </div>
           </div>

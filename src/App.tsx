@@ -44,7 +44,7 @@ export default function App() {
   const format = deviceOrientation.physicalFormat;
   // The live view stays fixed. Rotation is applied only to the exported pixels
   // so a sideways full view becomes a complete landscape photograph.
-  const captureRotation = format === 'horizontal' ? -deviceOrientation.angle : 0;
+  const captureRotation = format === 'horizontal' ? deviceOrientation.angle : 0;
 
   // Active frame format: 'vertical' (9:16) or 'horizontal' (16:9)
   // Event settings & photo counter

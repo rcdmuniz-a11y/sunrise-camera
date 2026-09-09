@@ -26,7 +26,9 @@ export function drawCameraSource(ctx: CanvasRenderingContext2D,
   const quarterTurn = Math.abs(rotation) === 90;
   const effectiveWidth = quarterTurn ? height : width;
   const effectiveHeight = quarterTurn ? width : height;
-  const scale = Math.max(outputWidth / effectiveWidth, outputHeight / effectiveHeight) * requestedZoom;
+  // Fit the complete sensor image inside the fixed export. Using the larger
+  // scale here would fill the canvas by throwing away parts of the photograph.
+  const scale = Math.min(outputWidth / effectiveWidth, outputHeight / effectiveHeight) * requestedZoom;
   ctx.save();
   ctx.translate(outputWidth / 2, outputHeight / 2);
   if (rotation) ctx.rotate(rotation * Math.PI / 180);
