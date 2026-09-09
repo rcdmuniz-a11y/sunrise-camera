@@ -1,5 +1,5 @@
 import React from 'react';
-import { CameraFormat, CameraLens, CameraMode, CaptureSize } from '../types/camera';
+import { CameraLens, CameraMode, CaptureSize } from '../types/camera';
 import { Sparkles, Video as VideoIcon, Camera as CameraIcon } from 'lucide-react';
 
 interface BottomControlsProps {
@@ -13,11 +13,9 @@ interface BottomControlsProps {
   onCapture: () => void;
   isCapturing: boolean;
   captureSize: CaptureSize;
-  physicalFormat: CameraFormat;
   onSelectCaptureSize: (size: CaptureSize) => void;
   lastPhotoThumb?: string;
   onOpenLastPhoto?: () => void;
-  isLandscape?: boolean;
 }
 
 export const BottomControls: React.FC<BottomControlsProps> = ({
@@ -31,19 +29,17 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
   onCapture,
   isCapturing,
   captureSize,
-  physicalFormat,
   onSelectCaptureSize,
   lastPhotoThumb,
   onOpenLastPhoto,
-  isLandscape = false,
 }) => {
   // Digital zoom crops the native camera feed consistently in every output.
   const availableLenses: CameraLens[] =
     facingMode === 'user' ? ['1x', '2x'] : ['1x', '2x', '3x'];
   const sizes: Array<{ id: CaptureSize; label: string }> = [
-    { id: 'full', label: physicalFormat === 'horizontal' ? '16:9' : '9:16' },
-    { id: 'classic', label: physicalFormat === 'horizontal' ? '4:3' : '3:4' },
-    { id: 'square', label: '1:1' },
+    { id: 'full', label: 'Completa' },
+    { id: 'classic', label: 'Clásica' },
+    { id: 'square', label: 'Cuadrada' },
   ];
 
   const formatTime = (totalSec: number) => {
@@ -55,24 +51,25 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
   return (
     <footer
       id="camera_bottom_controls"
-      className="absolute bottom-0 left-0 right-0 z-30 flex flex-col items-center bg-gradient-to-t from-black/85 via-black/40 to-transparent text-white select-none transition-all duration-300 pointer-events-auto px-4"
+      className="absolute bottom-0 left-0 right-0 z-30 flex flex-col items-center bg-gradient-to-t from-black/85 via-black/40 to-transparent text-white select-none pointer-events-auto px-4"
       style={{
-        ...(isLandscape ? { left: 'auto', width: 208, top: 64, justifyContent: 'center' } : {}),
-        paddingBottom: isLandscape
-          ? 'max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px))'
-          : 'max(24px, calc(env(safe-area-inset-bottom, 0px) + 18px))',
+        paddingBottom: 'max(24px, calc(env(safe-area-inset-bottom, 0px) + 18px))',
         paddingLeft: 'max(12px, env(safe-area-inset-left, 12px))',
         paddingRight: 'max(12px, env(safe-area-inset-right, 12px))',
       }}
     >
-      <div className="flex items-center gap-1 rounded-full bg-black/65 p-1 mb-2 border border-white/15 backdrop-blur-md">
-        {sizes.map(size => <button key={size.id} onClick={() => onSelectCaptureSize(size.id)}
+      <label className="mb-2 flex items-center gap-2 rounded-full border border-white/15 bg-black/65 px-3 py-1.5 text-xs backdrop-blur-md">
+        <span className="text-white/55">Tamaño</span>
+        <select
+          aria-label="Tamaño de la foto"
+          value={captureSize}
+          onChange={(event) => onSelectCaptureSize(event.target.value as CaptureSize)}
           disabled={isRecording || isCapturing}
-          className={`min-w-[48px] rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${captureSize === size.id
-            ? 'bg-white text-black' : 'text-white/70 hover:text-white'}`}>
-          {size.label}
-        </button>)}
-      </div>
+          className="appearance-none bg-transparent pr-1 font-bold text-white outline-none disabled:opacity-50"
+        >
+          {sizes.map(size => <option key={size.id} value={size.id} className="bg-black text-white">{size.label}</option>)}
+        </select>
+      </label>
       {/* 1. iPhone Zoom Lens Selector with 0.5x Plano Angular */}
       <div className="flex flex-col items-center mb-1.5">
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 shadow-xl">

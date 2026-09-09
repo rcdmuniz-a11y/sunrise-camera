@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-  CameraFormat,
   CapturedPhoto,
   EventSettings,
   CameraLens,
@@ -43,9 +42,10 @@ const DEFAULT_SETTINGS: EventSettings = {
 
 export default function App() {
   const deviceOrientation = useDeviceOrientation();
-  const viewportFormat: CameraFormat = deviceOrientation.isViewportLandscape ? 'horizontal' : 'vertical';
   const format = deviceOrientation.physicalFormat;
-  const mediaRotation = format !== viewportFormat ? -deviceOrientation.angle : 0;
+  // Keep the viewfinder visually fixed. Device orientation only selects the
+  // correct final frame; it must never rotate or rearrange the live camera UI.
+  const mediaRotation = 0;
 
   // Active frame format: 'vertical' (9:16) or 'horizontal' (16:9)
   // Event settings & photo counter
@@ -285,7 +285,6 @@ export default function App() {
         facingMode={facingMode}
         zoom={zoom}
         onZoomChange={handleZoomChange}
-        rotation={mediaRotation}
         captureSize={captureSize}
         physicalFormat={format}
         videoRef={videoRef}
@@ -310,7 +309,6 @@ export default function App() {
         onCapture={handleShutterTrigger}
         isCapturing={isCapturing || !cameraReady}
         captureSize={captureSize}
-        physicalFormat={format}
         onSelectCaptureSize={setCaptureSize}
         lastPhotoThumb={lastMediaThumb}
         onOpenLastPhoto={() => {
@@ -320,7 +318,6 @@ export default function App() {
             setCurrentPhoto(lastPhotoRef.current);
           }
         }}
-        isLandscape={deviceOrientation.isViewportLandscape}
       />
 
       {captureError && <div role="alert" className="absolute top-20 inset-x-4 z-50 rounded-xl bg-red-950 p-3 text-white text-center" onClick={() => setCaptureError(null)}>{captureError}</div>}

@@ -5,14 +5,13 @@ interface CameraViewProps {
   facingMode: 'user' | 'environment';
   zoom: number;
   onZoomChange: (zoom: number) => void;
-  rotation: number;
   captureSize: CaptureSize;
   physicalFormat: CameraFormat;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   onReady: (ready: boolean) => void;
 }
 
-export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoomChange, rotation,
+export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoomChange,
   captureSize, physicalFormat, videoRef,
   onReady }) => {
   const [error, setError] = useState<string | null>(null);
@@ -82,16 +81,13 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoom
     : captureSize === 'classic'
       ? physicalFormat === 'horizontal' ? 4 / 3 : 3 / 4
       : physicalFormat === 'horizontal' ? 16 / 9 : 9 / 16;
-  const viewportAspect = typeof window === 'undefined' ? 9 / 16 : window.innerWidth / window.innerHeight;
-  const quarterTurnScale = Math.abs(rotation) === 90 ? Math.max(viewportAspect, 1 / viewportAspect) : 1;
-
   return <div id="camera_viewport_container"
     className="absolute flex items-center justify-center bg-black overflow-hidden"
     onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
     style={{ inset: 0, touchAction: 'none' }}>
     <div className="relative overflow-hidden w-full h-full">
       <video ref={videoRef} playsInline autoPlay muted className="w-full h-full object-cover"
-        style={{ transform: `rotate(${rotation}deg) scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom * quarterTurnScale})` }} />
+        style={{ transform: `scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom})` }} />
       <span className="absolute top-20 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-amber-300 pointer-events-none">
         {zoom.toFixed(1)}×
       </span>
