@@ -5,7 +5,6 @@ import {
   CameraLens,
   CameraMode,
   CapturedVideo,
-  CaptureSize,
 } from './types/camera';
 import marcoVerticalPng from './Marco Vertical.png';
 import marcoHorizontalPng from './Marco Horizontal.png';
@@ -73,7 +72,6 @@ export default function App() {
   const [zoom, setZoom] = useState(1);
   const zoomRef = useRef(1);
   const rotationRef = useRef(0);
-  const [captureSize, setCaptureSize] = useState<CaptureSize>('full');
   // Capture execution & feedback
   const [isCapturing, setIsCapturing] = useState(false);
 
@@ -147,7 +145,6 @@ export default function App() {
         format,
         zoom,
         rotation: mediaRotation,
-        captureSize,
       });
 
       // Update state & counter
@@ -198,7 +195,6 @@ export default function App() {
         filePrefix: settings.filePrefix,
         getZoom: () => zoomRef.current,
         getRotation: () => rotationRef.current,
-        captureSize,
       });
 
       setIsRecording(true);
@@ -241,7 +237,6 @@ export default function App() {
         facingMode,
         counter: settings.photoCounter,
         filePrefix: settings.filePrefix,
-        captureSize,
       });
 
       setIsRecording(false);
@@ -285,8 +280,6 @@ export default function App() {
         facingMode={facingMode}
         zoom={zoom}
         onZoomChange={handleZoomChange}
-        captureSize={captureSize}
-        physicalFormat={format}
         videoRef={videoRef}
         onReady={setCameraReady}
       />
@@ -308,8 +301,6 @@ export default function App() {
         facingMode={facingMode}
         onCapture={handleShutterTrigger}
         isCapturing={isCapturing || !cameraReady}
-        captureSize={captureSize}
-        onSelectCaptureSize={setCaptureSize}
         lastPhotoThumb={lastMediaThumb}
         onOpenLastPhoto={() => {
           if (cameraMode === 'video' && lastVideoRef.current) {

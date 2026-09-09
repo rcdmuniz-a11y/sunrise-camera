@@ -1,7 +1,5 @@
 export type CameraFormat = 'vertical' | 'horizontal';
 
-export type CaptureSize = 'full' | 'classic' | 'square';
-
 export type CameraMode = 'photo' | 'video';
 
 export type CameraLens = '0.5x' | '1x' | '2x' | '3x';

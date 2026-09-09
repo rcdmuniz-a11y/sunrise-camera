@@ -1,5 +1,5 @@
 import React from 'react';
-import { CameraLens, CameraMode, CaptureSize } from '../types/camera';
+import { CameraLens, CameraMode } from '../types/camera';
 import { Sparkles, Video as VideoIcon, Camera as CameraIcon } from 'lucide-react';
 
 interface BottomControlsProps {
@@ -12,8 +12,6 @@ interface BottomControlsProps {
   facingMode: 'user' | 'environment';
   onCapture: () => void;
   isCapturing: boolean;
-  captureSize: CaptureSize;
-  onSelectCaptureSize: (size: CaptureSize) => void;
   lastPhotoThumb?: string;
   onOpenLastPhoto?: () => void;
 }
@@ -28,20 +26,12 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
   facingMode,
   onCapture,
   isCapturing,
-  captureSize,
-  onSelectCaptureSize,
   lastPhotoThumb,
   onOpenLastPhoto,
 }) => {
   // Digital zoom crops the native camera feed consistently in every output.
   const availableLenses: CameraLens[] =
     facingMode === 'user' ? ['1x', '2x'] : ['1x', '2x', '3x'];
-  const sizes: Array<{ id: CaptureSize; label: string }> = [
-    { id: 'full', label: 'Completa' },
-    { id: 'classic', label: 'Clásica' },
-    { id: 'square', label: 'Cuadrada' },
-  ];
-
   const formatTime = (totalSec: number) => {
     const mins = Math.floor(totalSec / 60);
     const secs = totalSec % 60;
@@ -58,18 +48,6 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
         paddingRight: 'max(12px, env(safe-area-inset-right, 12px))',
       }}
     >
-      <label className="mb-2 flex items-center gap-2 rounded-full border border-white/15 bg-black/65 px-3 py-1.5 text-xs backdrop-blur-md">
-        <span className="text-white/55">Tamaño</span>
-        <select
-          aria-label="Tamaño de la foto"
-          value={captureSize}
-          onChange={(event) => onSelectCaptureSize(event.target.value as CaptureSize)}
-          disabled={isRecording || isCapturing}
-          className="appearance-none bg-transparent pr-1 font-bold text-white outline-none disabled:opacity-50"
-        >
-          {sizes.map(size => <option key={size.id} value={size.id} className="bg-black text-white">{size.label}</option>)}
-        </select>
-      </label>
       {/* 1. iPhone Zoom Lens Selector with 0.5x Plano Angular */}
       <div className="flex flex-col items-center mb-1.5">
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 shadow-xl">

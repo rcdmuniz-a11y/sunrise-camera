@@ -1,19 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CameraFormat, CaptureSize } from '../types/camera';
-
 interface CameraViewProps {
   facingMode: 'user' | 'environment';
   zoom: number;
   onZoomChange: (zoom: number) => void;
-  captureSize: CaptureSize;
-  physicalFormat: CameraFormat;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   onReady: (ready: boolean) => void;
 }
 
 export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoomChange,
-  captureSize, physicalFormat, videoRef,
-  onReady }) => {
+  videoRef, onReady }) => {
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
@@ -77,10 +72,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoom
     onZoomChange(Math.min(maxZoom, Math.max(1, Math.round(next * 10) / 10)));
   };
   const handleTouchEnd = () => { pinchRef.current = null; };
-  const selectedAspect = captureSize === 'square' ? 1
-    : captureSize === 'classic'
-      ? physicalFormat === 'horizontal' ? 4 / 3 : 3 / 4
-      : physicalFormat === 'horizontal' ? 16 / 9 : 9 / 16;
   return <div id="camera_viewport_container"
     className="absolute flex items-center justify-center bg-black overflow-hidden"
     onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
@@ -91,11 +82,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoom
       <span className="absolute top-20 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-amber-300 pointer-events-none">
         {zoom.toFixed(1)}×
       </span>
-      <div className="absolute inset-3 pointer-events-none flex items-center justify-center">
-        <div className="max-w-full max-h-full border border-white/55 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.08)]"
-          style={{ aspectRatio: selectedAspect, width: selectedAspect >= 1 ? '94%' : 'auto',
-            height: selectedAspect < 1 ? '94%' : 'auto' }} />
-      </div>
     </div>
     {error && <div role="alert" className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center bg-slate-950 text-white">
       <p>{error}</p><button onClick={() => setRetry(n => n + 1)} className="rounded-xl bg-amber-400 px-5 py-3 text-black">Reintentar</button>
