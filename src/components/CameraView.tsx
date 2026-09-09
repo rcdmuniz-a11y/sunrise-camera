@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { calculateFrameLayout } from '../utils/cameraGeometry';
+import { FrameState } from '../utils/cameraGeometry';
 interface CameraViewProps {
   facingMode: 'user' | 'environment';
   zoom: number;
@@ -7,31 +7,15 @@ interface CameraViewProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   stageRef: React.RefObject<HTMLDivElement | null>;
   frameSource: string;
-  frameAspect: number;
-  frameOrientation: number;
+  frameState: FrameState;
   onReady: (ready: boolean) => void;
 }
 
 export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoomChange,
-  videoRef, stageRef, frameSource, frameAspect, frameOrientation, onReady }) => {
+  videoRef, stageRef, frameSource, frameState, onReady }) => {
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
-  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
-
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    const update = () => setStageSize({ width: stage.clientWidth, height: stage.clientHeight });
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(stage);
-    window.visualViewport?.addEventListener('resize', update);
-    return () => {
-      observer.disconnect();
-      window.visualViewport?.removeEventListener('resize', update);
-    };
-  }, [stageRef]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -92,9 +76,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoom
     onZoomChange(Math.min(maxZoom, Math.max(1, Math.round(next * 10) / 10)));
   };
   const handleTouchEnd = () => { pinchRef.current = null; };
-  const frameLayout = stageSize.width && stageSize.height
-    ? calculateFrameLayout(stageSize.width, stageSize.height, frameOrientation, frameAspect)
-    : null;
   return <div id="camera_viewport_container"
     className="absolute flex items-center justify-center bg-black overflow-hidden"
     onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
@@ -103,11 +84,12 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoom
       style={{ aspectRatio: '9 / 16', height: 'min(100dvh, 177.7778vw)', width: 'min(100vw, 56.25dvh)' }}>
       <video ref={videoRef} playsInline autoPlay muted className="w-full h-full object-cover"
         style={{ transform: `scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom})` }} />
-      {frameLayout && <img src={frameSource} alt="" aria-hidden="true"
-        className="absolute z-10 pointer-events-none transition-[left,top,transform] duration-200 ease-out"
-        style={{ left: frameLayout.x, top: frameLayout.y, width: frameLayout.width,
-          height: frameLayout.height, transform: `rotate(${frameLayout.rotation}deg)`,
-          transformOrigin: 'center' }} />}
+      <img src={frameSource} alt="" aria-hidden="true"
+        className="absolute z-10 pointer-events-none"
+        style={{ left: `${frameState.x * 100}%`, top: `${frameState.y * 100}%`,
+          width: `${frameState.width * 100}%`, height: `${frameState.height * 100}%`,
+          transform: `rotate(${frameState.rotation}deg)`,
+          transformOrigin: 'center' }} />
       <span className="absolute top-20 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-amber-300 pointer-events-none">
         {zoom.toFixed(1)}×
       </span>

@@ -20,12 +20,10 @@ import { CameraView } from './components/CameraView';
 import { BottomControls } from './components/BottomControls';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { VideoPreviewModal } from './components/VideoPreviewModal';
-import { useDeviceOrientation } from './hooks/useDeviceOrientation';
 import {
-  calculateFrameLayout,
   calculateVisibleVideoRegion,
-  normalizeFrameLayout,
-  normalizeQuarterTurn,
+  FrameAnchor,
+  getFrameState,
 } from './utils/cameraGeometry';
 import confetti from 'canvas-confetti';
 
@@ -46,13 +44,9 @@ const DEFAULT_SETTINGS: EventSettings = {
 };
 
 export default function App() {
-  const deviceOrientation = useDeviceOrientation();
-  const format = deviceOrientation.physicalFormat;
-  const [manualFrameOffset, setManualFrameOffset] = useState(0);
-  const effectiveFrameOrientation = normalizeQuarterTurn(deviceOrientation.angle + manualFrameOffset);
-  const useSideFrame = effectiveFrameOrientation === 90 || effectiveFrameOrientation === 270;
-  const activeFrameSource = useSideFrame ? marcoHorizontalPng : marcoVerticalPng;
-  const activeFrameAspect = useSideFrame ? 1504 / 291 : 1213 / 459;
+  const format = 'vertical' as const;
+  const [frameState, setFrameState] = useState(() => getFrameState('bottom'));
+  const activeFrameSource = frameState.asset === 'horizontal' ? marcoHorizontalPng : marcoVerticalPng;
 
   // Active frame format: 'vertical' (9:16) or 'horizontal' (16:9)
   // Event settings & photo counter
@@ -153,11 +147,7 @@ export default function App() {
         stageHeight,
         zoom,
       );
-      const frameLayout = normalizeFrameLayout(
-        calculateFrameLayout(stageWidth, stageHeight, effectiveFrameOrientation, activeFrameAspect),
-        stageWidth,
-        stageHeight,
-      );
+      const frameLayout = { ...frameState };
       const frameSource = activeFrameSource;
 
       playShutterSound();
@@ -308,15 +298,17 @@ export default function App() {
         videoRef={videoRef}
         stageRef={stageRef}
         frameSource={activeFrameSource}
-        frameAspect={activeFrameAspect}
-        frameOrientation={effectiveFrameOrientation}
+        frameState={frameState}
         onReady={setCameraReady}
       />
 
       {/* Floating Top Header Controls */}
       <TopBar
         onSwitchCamera={handleSwitchCamera}
-        onRotateFrame={() => setManualFrameOffset(value => (value + 90) % 360)}
+        onRotateFrame={() => setFrameState(current => {
+          const anchors: FrameAnchor[] = ['bottom', 'right', 'top', 'left'];
+          return getFrameState(anchors[(anchors.indexOf(current.anchor) + 1) % anchors.length]);
+        })}
         photoCount={settings.photoCounter}
       />
 

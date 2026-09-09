@@ -19,6 +19,13 @@ export interface FrameLayout {
   rotation: number;
 }
 
+export type FrameAnchor = 'bottom' | 'right' | 'top' | 'left';
+
+export interface FrameState extends FrameLayout {
+  anchor: FrameAnchor;
+  asset: 'vertical' | 'horizontal';
+}
+
 export const zoomForLens = (lens: CameraLens): number => lens === '2x' ? 2 : lens === '3x' ? 3 : 1;
 
 export const normalizeQuarterTurn = (angle: number) =>
@@ -91,6 +98,25 @@ export function normalizeFrameLayout(layout: FrameLayout, stageWidth: number, st
     height: layout.height / stageHeight,
     rotation: layout.rotation,
   };
+}
+
+const FRAME_ANGLES: Record<FrameAnchor, number> = {
+  bottom: 0,
+  right: 90,
+  top: 180,
+  left: 270,
+};
+
+export function getFrameState(anchor: FrameAnchor): FrameState {
+  const rotation = FRAME_ANGLES[anchor];
+  const asset = anchor === 'right' || anchor === 'left' ? 'horizontal' : 'vertical';
+  const aspect = asset === 'horizontal' ? 1504 / 291 : 1213 / 459;
+  const layout = normalizeFrameLayout(
+    calculateFrameLayout(CAPTURE_WIDTH, CAPTURE_HEIGHT, rotation, aspect),
+    CAPTURE_WIDTH,
+    CAPTURE_HEIGHT,
+  );
+  return { ...layout, anchor, asset };
 }
 
 export function drawVisibleVideoRegion(

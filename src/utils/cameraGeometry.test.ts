@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   calculateFrameLayout,
   calculateVisibleVideoRegion,
+  getFrameState,
   normalizeFrameLayout,
 } from './cameraGeometry';
 
@@ -12,6 +13,18 @@ test('9:16 preview maps to the exact centered source crop', () => {
   assert.equal(region.sourceWidth, 607.5);
   assert.equal(region.sourceX, 656.25);
   assert.equal(region.sourceY, 0);
+});
+
+test('manual frame states are deterministic and normalized', () => {
+  const states = ['bottom', 'right', 'top', 'left'] as const;
+  const expectedRotations = [0, 90, 180, 270];
+  states.forEach((anchor, index) => {
+    const first = getFrameState(anchor);
+    const repeated = getFrameState(anchor);
+    assert.deepEqual(first, repeated);
+    assert.equal(first.anchor, anchor);
+    assert.equal(first.rotation, expectedRotations[index]);
+  });
 });
 
 test('digital zoom keeps the same center and halves the visible region at 2x', () => {
