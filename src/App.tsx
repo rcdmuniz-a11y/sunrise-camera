@@ -21,6 +21,12 @@ import { BottomControls } from './components/BottomControls';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { VideoPreviewModal } from './components/VideoPreviewModal';
 import { useDeviceOrientation } from './hooks/useDeviceOrientation';
+import {
+  calculateFrameLayout,
+  calculateVisibleVideoRegion,
+  normalizeFrameLayout,
+  normalizeQuarterTurn,
+} from './utils/cameraGeometry';
 import confetti from 'canvas-confetti';
 
 const STORAGE_KEYS = {
@@ -42,9 +48,11 @@ const DEFAULT_SETTINGS: EventSettings = {
 export default function App() {
   const deviceOrientation = useDeviceOrientation();
   const format = deviceOrientation.physicalFormat;
-  // The live view stays fixed. Rotation is applied only to the exported pixels
-  // so a sideways full view becomes a complete landscape photograph.
-  const captureRotation = format === 'horizontal' ? deviceOrientation.angle : 0;
+  const [manualFrameOffset, setManualFrameOffset] = useState(0);
+  const effectiveFrameOrientation = normalizeQuarterTurn(deviceOrientation.angle + manualFrameOffset);
+  const useSideFrame = effectiveFrameOrientation === 90 || effectiveFrameOrientation === 270;
+  const activeFrameSource = useSideFrame ? marcoHorizontalPng : marcoVerticalPng;
+  const activeFrameAspect = useSideFrame ? 1504 / 291 : 1213 / 459;
 
   // Active frame format: 'vertical' (9:16) or 'horizontal' (16:9)
   // Event settings & photo counter
@@ -71,7 +79,6 @@ export default function App() {
   const [lens, setLens] = useState<CameraLens>('1x');
   const [zoom, setZoom] = useState(1);
   const zoomRef = useRef(1);
-  const rotationRef = useRef(captureRotation);
   // Capture execution & feedback
   const [isCapturing, setIsCapturing] = useState(false);
 
@@ -83,6 +90,7 @@ export default function App() {
   const lastPhotoRef = useRef<CapturedPhoto | null>(null);
   const lastVideoRef = useRef<CapturedVideo | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -112,10 +120,6 @@ export default function App() {
     zoomRef.current = zoom;
   }, [zoom]);
 
-  useEffect(() => {
-    rotationRef.current = captureRotation;
-  }, [captureRotation]);
-
   const handleZoomChange = (nextZoom: number) => {
     setZoom(nextZoom);
     setLens(nextZoom >= 2.5 ? '3x' : nextZoom >= 1.5 ? '2x' : '1x');
@@ -133,18 +137,40 @@ export default function App() {
     setIsCapturing(true);
 
     try {
+      const video = videoRef.current;
+      const stage = stageRef.current;
+      if (!video || !stage || !video.videoWidth || !video.videoHeight) {
+        throw new Error('La cámara todavía no está lista. Vuelve a intentar.');
+      }
+      // Snapshot everything synchronously. Orientation/resize events after this
+      // point cannot alter the photograph already requested by the user.
+      const stageWidth = stage.clientWidth;
+      const stageHeight = stage.clientHeight;
+      const visibleRegion = calculateVisibleVideoRegion(
+        video.videoWidth,
+        video.videoHeight,
+        stageWidth,
+        stageHeight,
+        zoom,
+      );
+      const frameLayout = normalizeFrameLayout(
+        calculateFrameLayout(stageWidth, stageHeight, effectiveFrameOrientation, activeFrameAspect),
+        stageWidth,
+        stageHeight,
+      );
+      const frameSource = activeFrameSource;
+
       playShutterSound();
 
       const photo = await composeHighResPhoto({
-        videoElement: videoRef.current,
-        frames: { vertical: marcoVerticalPng, horizontal: marcoHorizontalPng },
+        videoElement: video,
+        frameSource,
+        visibleRegion,
+        frameLayout,
         counter: settings.photoCounter,
         filePrefix: settings.filePrefix,
         facingMode,
         lens,
-        format,
-        zoom,
-        rotation: captureRotation,
       });
 
       // Update state & counter
@@ -194,7 +220,6 @@ export default function App() {
         counter: settings.photoCounter,
         filePrefix: settings.filePrefix,
         getZoom: () => zoomRef.current,
-        getRotation: () => rotationRef.current,
       });
 
       setIsRecording(true);
@@ -281,12 +306,17 @@ export default function App() {
         zoom={zoom}
         onZoomChange={handleZoomChange}
         videoRef={videoRef}
+        stageRef={stageRef}
+        frameSource={activeFrameSource}
+        frameAspect={activeFrameAspect}
+        frameOrientation={effectiveFrameOrientation}
         onReady={setCameraReady}
       />
 
       {/* Floating Top Header Controls */}
       <TopBar
         onSwitchCamera={handleSwitchCamera}
+        onRotateFrame={() => setManualFrameOffset(value => (value + 90) % 360)}
         photoCount={settings.photoCounter}
       />
 

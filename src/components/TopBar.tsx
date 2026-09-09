@@ -1,15 +1,18 @@
 import React from 'react';
 import {
+  RotateCw,
   SwitchCamera,
 } from 'lucide-react';
 
 interface TopBarProps {
   onSwitchCamera: () => void;
+  onRotateFrame: () => void;
   photoCount: number;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
   onSwitchCamera,
+  onRotateFrame,
   photoCount,
 }) => {
   return (
@@ -30,6 +33,14 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       {/* Right: Camera Flip */}
       <div className="flex items-center gap-2">
+        <button
+          id="btn_rotate_frame"
+          onClick={onRotateFrame}
+          title="Girar solamente el marco"
+          className="p-2 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white active:scale-95 transition-all"
+        >
+          <RotateCw size={16} />
+        </button>
         {/* Flip camera */}
         <button
           id="btn_flip_camera"

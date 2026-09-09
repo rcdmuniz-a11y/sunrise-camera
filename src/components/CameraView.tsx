@@ -1,17 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { calculateFrameLayout } from '../utils/cameraGeometry';
 interface CameraViewProps {
   facingMode: 'user' | 'environment';
   zoom: number;
   onZoomChange: (zoom: number) => void;
   videoRef: React.RefObject<HTMLVideoElement | null>;
+  stageRef: React.RefObject<HTMLDivElement | null>;
+  frameSource: string;
+  frameAspect: number;
+  frameOrientation: number;
   onReady: (ready: boolean) => void;
 }
 
 export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoomChange,
-  videoRef, onReady }) => {
+  videoRef, stageRef, frameSource, frameAspect, frameOrientation, onReady }) => {
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const update = () => setStageSize({ width: stage.clientWidth, height: stage.clientHeight });
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(stage);
+    window.visualViewport?.addEventListener('resize', update);
+    return () => {
+      observer.disconnect();
+      window.visualViewport?.removeEventListener('resize', update);
+    };
+  }, [stageRef]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -32,7 +52,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoom
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error('Abre la aplicación con HTTPS o localhost para usar la cámara.');
         stream = await navigator.mediaDevices.getUserMedia({ audio: false,
-          video: { facingMode: { ideal: facingMode }, width: { ideal: 1920 }, height: { ideal: 1440 } } });
+          video: { facingMode: { ideal: facingMode }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
         if (video) { video.srcObject = stream; await video.play(); updateSize(); }
       } catch (err) {
@@ -72,13 +92,22 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoom
     onZoomChange(Math.min(maxZoom, Math.max(1, Math.round(next * 10) / 10)));
   };
   const handleTouchEnd = () => { pinchRef.current = null; };
+  const frameLayout = stageSize.width && stageSize.height
+    ? calculateFrameLayout(stageSize.width, stageSize.height, frameOrientation, frameAspect)
+    : null;
   return <div id="camera_viewport_container"
     className="absolute flex items-center justify-center bg-black overflow-hidden"
     onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
     style={{ inset: 0, touchAction: 'none' }}>
-    <div className="relative overflow-hidden w-full h-full">
+    <div ref={stageRef} id="captureStage" className="relative overflow-hidden bg-black"
+      style={{ aspectRatio: '9 / 16', height: 'min(100dvh, 177.7778vw)', width: 'min(100vw, 56.25dvh)' }}>
       <video ref={videoRef} playsInline autoPlay muted className="w-full h-full object-cover"
         style={{ transform: `scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom})` }} />
+      {frameLayout && <img src={frameSource} alt="" aria-hidden="true"
+        className="absolute z-10 pointer-events-none transition-[left,top,transform] duration-200 ease-out"
+        style={{ left: frameLayout.x, top: frameLayout.y, width: frameLayout.width,
+          height: frameLayout.height, transform: `rotate(${frameLayout.rotation}deg)`,
+          transformOrigin: 'center' }} />}
       <span className="absolute top-20 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-amber-300 pointer-events-none">
         {zoom.toFixed(1)}×
       </span>

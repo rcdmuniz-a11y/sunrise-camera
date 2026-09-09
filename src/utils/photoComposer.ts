@@ -1,49 +1,52 @@
 import { CapturedPhoto, CameraLens } from '../types/camera';
-import { CameraFormat } from '../types/camera';
-import { drawCameraSource, drawEventFrame } from './cameraGeometry';
+import {
+  CAPTURE_HEIGHT,
+  CAPTURE_WIDTH,
+  drawNormalizedFrame,
+  drawVisibleVideoRegion,
+  FrameLayout,
+  VisibleVideoRegion,
+} from './cameraGeometry';
 
 interface ComposeOptions {
   videoElement?: HTMLVideoElement | null;
   imageElement?: HTMLImageElement | null;
-  frames: { vertical: string; horizontal: string };
+  frameSource: string;
+  visibleRegion: VisibleVideoRegion;
+  frameLayout: FrameLayout;
   counter: number;
   filePrefix: string;
   facingMode?: 'user' | 'environment';
   lens?: CameraLens;
-  format: CameraFormat;
-  zoom?: number;
-  rotation?: number;
 }
 
 export async function composeHighResPhoto(options: ComposeOptions): Promise<CapturedPhoto> {
-  const { videoElement, imageElement, frames, counter, filePrefix, format,
-    facingMode = 'environment', lens = '1x', zoom = 1, rotation = 0 } = options;
+  const { videoElement, imageElement, frameSource, visibleRegion, frameLayout,
+    counter, filePrefix, facingMode = 'environment', lens = '1x' } = options;
   const source = videoElement && videoElement.readyState >= 2 ? videoElement : imageElement;
   const width = source instanceof HTMLVideoElement ? source.videoWidth : source?.naturalWidth || 0;
   const height = source instanceof HTMLVideoElement ? source.videoHeight : source?.naturalHeight || 0;
   if (!source || !width || !height) throw new Error('La cámara todavía no está lista. Vuelve a intentar.');
-  const outputWidth = 1920;
-  const outputHeight = 1080;
   const canvas = document.createElement('canvas');
-  canvas.width = outputWidth; canvas.height = outputHeight;
+  canvas.width = CAPTURE_WIDTH; canvas.height = CAPTURE_HEIGHT;
   const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('No se pudo preparar la foto');
-  // Freeze the photograph before loading branding, so movement cannot change it.
-  drawCameraSource(ctx, source, width, height, outputWidth, outputHeight,
-    facingMode === 'user', lens, zoom, rotation);
+  // Freeze the exact visible crop before any asynchronous frame work.
+  drawVisibleVideoRegion(ctx, source, visibleRegion, CAPTURE_WIDTH, CAPTURE_HEIGHT,
+    facingMode === 'user');
   const frame = new Image();
   await new Promise<void>((resolve, reject) => {
     frame.onload = () => resolve();
     frame.onerror = () => reject(new Error('No se pudo cargar el marco de la foto'));
-    frame.src = frames[format];
+    frame.src = frameSource;
   });
-  drawEventFrame(ctx, frame, outputWidth, outputHeight);
+  drawNormalizedFrame(ctx, frame, frameLayout, CAPTURE_WIDTH, CAPTURE_HEIGHT);
   const index = String(counter).padStart(3, '0');
   const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(
     value => value ? resolve(value) : reject(new Error('No se pudo exportar la foto')), 'image/jpeg', 0.95));
   return { id: `photo_${Date.now()}_${index}`, filename: `${filePrefix}${index}.jpg`,
-    dataUrl: canvas.toDataURL('image/jpeg', 0.95), blob, format, filterId: 'original',
-    filterName: 'Original', timestamp: new Date(), lens, width: outputWidth, height: outputHeight };
+    dataUrl: canvas.toDataURL('image/jpeg', 0.95), blob, format: 'vertical', filterId: 'original',
+    filterName: 'Original', timestamp: new Date(), lens, width: CAPTURE_WIDTH, height: CAPTURE_HEIGHT };
 }
 
 export async function saveOrSharePhoto(photo: CapturedPhoto): Promise<{ savedDirectly: boolean; message: string }> {

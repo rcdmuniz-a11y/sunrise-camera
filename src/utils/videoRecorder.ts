@@ -11,7 +11,6 @@ export interface VideoRecordOptions {
   counter: number;
   filePrefix: string;
   getZoom?: () => number;
-  getRotation?: () => number;
 }
 
 export class VideoRecorderService {
@@ -51,7 +50,7 @@ export class VideoRecorderService {
       if (videoElement.readyState >= 2) {
         drawCameraSource(ctx, videoElement, videoElement.videoWidth, videoElement.videoHeight,
           canvasWidth, canvasHeight, facingMode === 'user', lens,
-          options.getZoom?.(), options.getRotation?.());
+          options.getZoom?.());
         if (frameImage?.naturalWidth) drawEventFrame(ctx, frameImage, canvasWidth, canvasHeight);
       }
       this.animFrameId = requestAnimationFrame(renderLoop);
