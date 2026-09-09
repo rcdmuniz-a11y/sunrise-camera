@@ -22,8 +22,10 @@ export async function composeHighResPhoto(options: ComposeOptions): Promise<Capt
   const width = source instanceof HTMLVideoElement ? source.videoWidth : source?.naturalWidth || 0;
   const height = source instanceof HTMLVideoElement ? source.videoHeight : source?.naturalHeight || 0;
   if (!source || !width || !height) throw new Error('La cámara todavía no está lista. Vuelve a intentar.');
-  const outputWidth = format === 'vertical' ? 1080 : 1920;
-  const outputHeight = format === 'vertical' ? 1920 : 1080;
+  // Phone camera streams use the full 4:3 sensor. Keeping that same shape
+  // avoids the destructive 16:9 crop when the handset is turned sideways.
+  const outputWidth = format === 'vertical' ? 1440 : 1920;
+  const outputHeight = format === 'vertical' ? 1920 : 1440;
   const canvas = document.createElement('canvas');
   canvas.width = outputWidth; canvas.height = outputHeight;
   const ctx = canvas.getContext('2d', { alpha: false });

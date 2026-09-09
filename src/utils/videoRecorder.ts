@@ -36,8 +36,8 @@ export class VideoRecorderService {
     // Target dimensions for smooth high-quality recording
     const isVertical = format === 'vertical';
     if (videoElement.readyState < 2 || !videoElement.videoWidth) throw new Error('La cámara todavía no está lista');
-    const canvasWidth = isVertical ? 720 : 1280;
-    const canvasHeight = isVertical ? 1280 : 720;
+    const canvasWidth = isVertical ? 960 : 1280;
+    const canvasHeight = isVertical ? 1280 : 960;
 
     const canvas = document.createElement('canvas');
     canvas.width = canvasWidth;

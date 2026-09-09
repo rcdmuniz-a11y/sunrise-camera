@@ -42,9 +42,9 @@ const DEFAULT_SETTINGS: EventSettings = {
 export default function App() {
   const deviceOrientation = useDeviceOrientation();
   const format = deviceOrientation.physicalFormat;
-  // Keep the viewfinder visually fixed. Device orientation only selects the
-  // correct final frame; it must never rotate or rearrange the live camera UI.
-  const mediaRotation = 0;
+  // The live view stays fixed. Rotation is applied only to the exported pixels
+  // so a sideways full view becomes a complete landscape photograph.
+  const captureRotation = format === 'horizontal' ? -deviceOrientation.angle : 0;
 
   // Active frame format: 'vertical' (9:16) or 'horizontal' (16:9)
   // Event settings & photo counter
@@ -71,7 +71,7 @@ export default function App() {
   const [lens, setLens] = useState<CameraLens>('1x');
   const [zoom, setZoom] = useState(1);
   const zoomRef = useRef(1);
-  const rotationRef = useRef(0);
+  const rotationRef = useRef(captureRotation);
   // Capture execution & feedback
   const [isCapturing, setIsCapturing] = useState(false);
 
@@ -113,8 +113,8 @@ export default function App() {
   }, [zoom]);
 
   useEffect(() => {
-    rotationRef.current = mediaRotation;
-  }, [mediaRotation]);
+    rotationRef.current = captureRotation;
+  }, [captureRotation]);
 
   const handleZoomChange = (nextZoom: number) => {
     setZoom(nextZoom);
@@ -144,7 +144,7 @@ export default function App() {
         lens,
         format,
         zoom,
-        rotation: mediaRotation,
+        rotation: captureRotation,
       });
 
       // Update state & counter
