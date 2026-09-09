@@ -37,9 +37,10 @@ export const TopBar: React.FC<TopBarProps> = ({
           id="btn_rotate_frame"
           onClick={onRotateFrame}
           title="Girar solamente el marco"
-          className="p-2 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white active:scale-95 transition-all"
+          className="flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-2 text-[11px] font-semibold text-white border border-white/20 hover:bg-black/80 active:scale-95 transition-all"
         >
-          <RotateCw size={16} />
+          <RotateCw size={14} />
+          <span>Ajusta el marco</span>
         </button>
         {/* Flip camera */}
         <button
