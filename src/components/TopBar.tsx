@@ -37,7 +37,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           id="btn_rotate_frame"
           onClick={onRotateFrame}
           title="Girar solamente el marco"
-          className="flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-2 text-[11px] font-semibold text-white border border-white/20 hover:bg-black/80 active:scale-95 transition-all"
+          className="sunrise-frame-adjust flex items-center gap-1.5 rounded-full bg-[#f29319] px-3 py-2 text-[11px] font-semibold text-white border border-orange-200/50 hover:bg-[#ff9f24] active:brightness-95 transition-colors"
         >
           <RotateCw size={14} />
           <span>Ajusta el marco</span>

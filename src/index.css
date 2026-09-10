@@ -23,3 +23,23 @@ html, body, #root {
   touch-action: manipulation;
 }
 
+@keyframes sunrise-frame-soft-pulse {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 rgba(242, 147, 25, 0);
+  }
+  50% {
+    filter: brightness(1.08);
+    box-shadow: 0 0 14px rgba(242, 147, 25, 0.32);
+  }
+}
+
+.sunrise-frame-adjust {
+  animation: sunrise-frame-soft-pulse 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sunrise-frame-adjust {
+    animation: none;
+  }
+}

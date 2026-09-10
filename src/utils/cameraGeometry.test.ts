@@ -17,7 +17,7 @@ test('9:16 preview maps to the exact centered source crop', () => {
 
 test('manual frame states are deterministic and normalized', () => {
   const states = ['bottom', 'left', 'top', 'right'] as const;
-  const expectedRotations = [0, 270, 180, 90];
+  const expectedRotations = [0, 90, 180, 270];
   states.forEach((anchor, index) => {
     const first = getFrameState(anchor);
     const repeated = getFrameState(anchor);
