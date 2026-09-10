@@ -2,18 +2,15 @@ import { CapturedPhoto, CameraLens } from '../types/camera';
 import {
   CAPTURE_HEIGHT,
   CAPTURE_WIDTH,
-  drawNormalizedFrame,
   drawVisibleVideoRegion,
-  FrameLayout,
   VisibleVideoRegion,
 } from './cameraGeometry';
 
 interface ComposeOptions {
   videoElement?: HTMLVideoElement | null;
   imageElement?: HTMLImageElement | null;
-  frameSource: string;
+  frameOverlay: HTMLCanvasElement;
   visibleRegion: VisibleVideoRegion;
-  frameLayout: FrameLayout;
   counter: number;
   filePrefix: string;
   facingMode?: 'user' | 'environment';
@@ -21,7 +18,7 @@ interface ComposeOptions {
 }
 
 export async function composeHighResPhoto(options: ComposeOptions): Promise<CapturedPhoto> {
-  const { videoElement, imageElement, frameSource, visibleRegion, frameLayout,
+  const { videoElement, imageElement, frameOverlay, visibleRegion,
     counter, filePrefix, facingMode = 'environment', lens = '1x' } = options;
   const source = videoElement && videoElement.readyState >= 2 ? videoElement : imageElement;
   const width = source instanceof HTMLVideoElement ? source.videoWidth : source?.naturalWidth || 0;
@@ -34,13 +31,8 @@ export async function composeHighResPhoto(options: ComposeOptions): Promise<Capt
   // Freeze the exact visible crop before any asynchronous frame work.
   drawVisibleVideoRegion(ctx, source, visibleRegion, CAPTURE_WIDTH, CAPTURE_HEIGHT,
     facingMode === 'user');
-  const frame = new Image();
-  await new Promise<void>((resolve, reject) => {
-    frame.onload = () => resolve();
-    frame.onerror = () => reject(new Error('No se pudo cargar el marco de la foto'));
-    frame.src = frameSource;
-  });
-  drawNormalizedFrame(ctx, frame, frameLayout, CAPTURE_WIDTH, CAPTURE_HEIGHT);
+  // The transparent overlay is the exact bitmap that was visible in preview.
+  ctx.drawImage(frameOverlay, 0, 0, CAPTURE_WIDTH, CAPTURE_HEIGHT);
   const index = String(counter).padStart(3, '0');
   const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(
     value => value ? resolve(value) : reject(new Error('No se pudo exportar la foto')), 'image/jpeg', 0.95));

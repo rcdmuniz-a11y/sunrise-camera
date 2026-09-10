@@ -85,6 +85,7 @@ export default function App() {
   const lastVideoRef = useRef<CapturedVideo | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const frameCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -147,16 +148,21 @@ export default function App() {
         stageHeight,
         zoom,
       );
-      const frameLayout = { ...frameState };
-      const frameSource = activeFrameSource;
+      const visibleFrameCanvas = frameCanvasRef.current;
+      if (!visibleFrameCanvas) throw new Error('El marco todavía no está listo.');
+      const frameOverlay = document.createElement('canvas');
+      frameOverlay.width = visibleFrameCanvas.width;
+      frameOverlay.height = visibleFrameCanvas.height;
+      const frameContext = frameOverlay.getContext('2d');
+      if (!frameContext) throw new Error('No se pudo congelar el marco.');
+      frameContext.drawImage(visibleFrameCanvas, 0, 0);
 
       playShutterSound();
 
       const photo = await composeHighResPhoto({
         videoElement: video,
-        frameSource,
+        frameOverlay,
         visibleRegion,
-        frameLayout,
         counter: settings.photoCounter,
         filePrefix: settings.filePrefix,
         facingMode,
@@ -297,6 +303,7 @@ export default function App() {
         onZoomChange={handleZoomChange}
         videoRef={videoRef}
         stageRef={stageRef}
+        frameCanvasRef={frameCanvasRef}
         frameSource={activeFrameSource}
         frameState={frameState}
         onReady={setCameraReady}
@@ -306,7 +313,7 @@ export default function App() {
       <TopBar
         onSwitchCamera={handleSwitchCamera}
         onRotateFrame={() => setFrameState(current => {
-          const anchors: FrameAnchor[] = ['bottom', 'right', 'top', 'left'];
+          const anchors: FrameAnchor[] = ['bottom', 'left', 'top', 'right'];
           return getFrameState(anchors[(anchors.indexOf(current.anchor) + 1) % anchors.length]);
         })}
         photoCount={settings.photoCounter}

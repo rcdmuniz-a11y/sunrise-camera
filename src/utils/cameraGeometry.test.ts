@@ -16,8 +16,8 @@ test('9:16 preview maps to the exact centered source crop', () => {
 });
 
 test('manual frame states are deterministic and normalized', () => {
-  const states = ['bottom', 'right', 'top', 'left'] as const;
-  const expectedRotations = [0, 90, 180, 270];
+  const states = ['bottom', 'left', 'top', 'right'] as const;
+  const expectedRotations = [0, 270, 180, 90];
   states.forEach((anchor, index) => {
     const first = getFrameState(anchor);
     const repeated = getFrameState(anchor);
@@ -25,6 +25,22 @@ test('manual frame states are deterministic and normalized', () => {
     assert.equal(first.anchor, anchor);
     assert.equal(first.rotation, expectedRotations[index]);
   });
+});
+
+test('left and right rotated bounding boxes touch their exact stage edges', () => {
+  const bounds = (anchor: 'left' | 'right') => {
+    const state = getFrameState(anchor);
+    const x = state.x * 1080;
+    const width = state.width * 1080;
+    const height = state.height * 1920;
+    const rotatedWidth = height;
+    return {
+      left: x + (width - rotatedWidth) / 2,
+      right: x + (width + rotatedWidth) / 2,
+    };
+  };
+  assert.ok(Math.abs(bounds('left').left) < 0.001);
+  assert.ok(Math.abs(bounds('right').right - 1080) < 0.001);
 });
 
 test('digital zoom keeps the same center and halves the visible region at 2x', () => {

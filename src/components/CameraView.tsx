@@ -1,21 +1,46 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FrameState } from '../utils/cameraGeometry';
+import {
+  CAPTURE_HEIGHT,
+  CAPTURE_WIDTH,
+  drawNormalizedFrame,
+  FrameState,
+} from '../utils/cameraGeometry';
 interface CameraViewProps {
   facingMode: 'user' | 'environment';
   zoom: number;
   onZoomChange: (zoom: number) => void;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   stageRef: React.RefObject<HTMLDivElement | null>;
+  frameCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   frameSource: string;
   frameState: FrameState;
   onReady: (ready: boolean) => void;
 }
 
 export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoomChange,
-  videoRef, stageRef, frameSource, frameState, onReady }) => {
+  videoRef, stageRef, frameCanvasRef, frameSource, frameState, onReady }) => {
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const canvas = frameCanvasRef.current;
+    if (!canvas) return;
+    canvas.width = CAPTURE_WIDTH;
+    canvas.height = CAPTURE_HEIGHT;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, CAPTURE_WIDTH, CAPTURE_HEIGHT);
+    const frame = new Image();
+    frame.onload = () => {
+      if (cancelled) return;
+      ctx.clearRect(0, 0, CAPTURE_WIDTH, CAPTURE_HEIGHT);
+      drawNormalizedFrame(ctx, frame, frameState, CAPTURE_WIDTH, CAPTURE_HEIGHT);
+    };
+    frame.src = frameSource;
+    return () => { cancelled = true; };
+  }, [frameCanvasRef, frameSource, frameState]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -84,12 +109,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ facingMode, zoom, onZoom
       style={{ aspectRatio: '9 / 16', height: 'min(100dvh, 177.7778vw)', width: 'min(100vw, 56.25dvh)' }}>
       <video ref={videoRef} playsInline autoPlay muted className="w-full h-full object-cover"
         style={{ transform: `scaleX(${facingMode === 'user' ? -1 : 1}) scale(${zoom})` }} />
-      <img src={frameSource} alt="" aria-hidden="true"
-        className="absolute z-10 pointer-events-none"
-        style={{ left: `${frameState.x * 100}%`, top: `${frameState.y * 100}%`,
-          width: `${frameState.width * 100}%`, height: `${frameState.height * 100}%`,
-          transform: `rotate(${frameState.rotation}deg)`,
-          transformOrigin: 'center' }} />
+      <canvas ref={frameCanvasRef} aria-hidden="true"
+        className="absolute inset-0 z-10 h-full w-full pointer-events-none" />
       <span className="absolute top-20 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-amber-300 pointer-events-none">
         {zoom.toFixed(1)}×
       </span>
